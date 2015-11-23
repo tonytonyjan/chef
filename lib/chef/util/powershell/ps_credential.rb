@@ -30,7 +30,7 @@ class Chef::Util::Powershell
     end
 
     alias to_s to_psobject
-    alias inspect to_psobject
+    alias to_text to_psobject
 
     private
 
