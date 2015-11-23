@@ -20,8 +20,25 @@ require 'chef/dsl/powershell'
 class Chef
   class Resource
     class DscResource < Chef::Resource
-
       provides :dsc_resource, os: "windows"
+
+      # This class will check if the object responds to
+      # to_text. If it does, it will call that as opposed
+      # to inspect. This is useful for properties that hold
+      # objects such as PsCredential, where we do not want
+      # to dump the actual ivars
+      class SafePrintArray < Array
+        def to_text
+          descriptions = self.map do |obj|
+            if obj.respond_to(:to_text)
+              obj.to_text
+            else
+              obj.inspect
+            end
+          end
+          "[#{descriptions.join(', ')}]"
+        end
+      end
 
       include Chef::DSL::Powershell
 
@@ -29,7 +46,7 @@ class Chef
 
       def initialize(name, run_context)
         super
-        @properties = {}
+        @properties = SafePrintArray.new
         @resource = nil
         @reboot_action = :nothing
       end
