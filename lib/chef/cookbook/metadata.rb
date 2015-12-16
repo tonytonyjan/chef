@@ -57,12 +57,14 @@ class Chef
       PRIVACY                = 'privacy'.freeze
       CHEF_VERSIONS          = 'chef_versions'.freeze
       OHAI_VERSIONS          = 'ohai_versions'.freeze
+      GEMS                   = 'gems'.freeze
 
       COMPARISON_FIELDS = [ :name, :description, :long_description, :maintainer,
                             :maintainer_email, :license, :platforms, :dependencies,
                             :recommendations, :suggestions, :conflicting, :providing,
                             :replacing, :attributes, :groupings, :recipes, :version,
-                            :source_url, :issues_url, :privacy, :chef_versions, :ohai_versions ]
+                            :source_url, :issues_url, :privacy, :chef_versions, :ohai_versions,
+                            :gems ]
 
       VERSION_CONSTRAINTS = {:depends      => DEPENDENCIES,
                              :recommends   => RECOMMENDATIONS,
@@ -92,6 +94,8 @@ class Chef
       attr_reader :chef_versions
       # @return [Array<Gem::Dependency>] Array of supported Ohai versions
       attr_reader :ohai_versions
+      # @return [Array<Array>] Array of gems to install with *args as an Array
+      attr_reader :gems
 
       # Builds a new Chef::Cookbook::Metadata object.
       #
@@ -129,6 +133,7 @@ class Chef
         @privacy = false
         @chef_versions = []
         @ohai_versions = []
+        @gems = []
 
         @errors = []
       end
@@ -419,6 +424,17 @@ class Chef
         @ohai_versions
       end
 
+      # Metadata DSL to set a gem to install from the cookbook metadata.  May be declared
+      # multiple times.  All the gems from all the cookbooks are combined into one Gemfile
+      # and depsolved together.  Uses Bundler's DSL for its implementation.
+      #
+      # @param args [Array<String>] Gem name and options to pass to Bundler's DSL
+      # @return [Array<Array>] Array of gem statements as args
+      def gem(*args)
+        @gems << args unless args.empty?
+        @gems
+      end
+
       # Adds a description for a recipe.
       #
       # === Parameters
@@ -571,7 +587,8 @@ class Chef
           ISSUES_URL             => self.issues_url,
           PRIVACY                => self.privacy,
           CHEF_VERSIONS          => gem_requirements_to_array(*self.chef_versions),
-          OHAI_VERSIONS          => gem_requirements_to_array(*self.ohai_versions)
+          OHAI_VERSIONS          => gem_requirements_to_array(*self.ohai_versions),
+          GEMS                   => self.gems,
         }
       end
 
@@ -608,6 +625,7 @@ class Chef
         @privacy                      = o[PRIVACY] if o.has_key?(PRIVACY)
         @chef_versions                = gem_requirements_from_array("chef", o[CHEF_VERSIONS]) if o.has_key?(CHEF_VERSIONS)
         @ohai_versions                = gem_requirements_from_array("ohai", o[OHAI_VERSIONS]) if o.has_key?(OHAI_VERSIONS)
+        @gems                         = o[GEMS] if o.has_key?(GEMS)
         self
       end
 

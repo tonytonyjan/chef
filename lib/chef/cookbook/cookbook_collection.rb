@@ -54,5 +54,9 @@ class Chef
         cookbook_version.metadata.validate_ohai_version!
       end
     end
+
+    def install_gems
+      CookbookGemInstaller.new(self).install
+    end
   end
 end
