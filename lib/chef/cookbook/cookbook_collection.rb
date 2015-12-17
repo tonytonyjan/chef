@@ -18,6 +18,7 @@
 #
 
 require 'chef/mash'
+require 'chef/cookbook/gem_installer'
 
 class Chef
   # == Chef::CookbookCollection
@@ -56,7 +57,7 @@ class Chef
     end
 
     def install_gems
-      CookbookGemInstaller.new(self).install
+      Cookbook::GemInstaller.new(self).install
     end
   end
 end
