@@ -690,6 +690,71 @@ RSpec.describe ChefConfig::Config do
     end
   end
 
+  describe "proxy_uri" do
+    subject(:proxy_uri) { described_class.proxy_uri(scheme, host, port) }
+    let(:env) { {} }
+    let(:scheme) { "http" }
+    let(:host) { "proxy.mycorp.com" }
+    let(:port) { 8080 }
+    let(:proxy) { "#{proxy_prefix}#{proxy_host}:#{proxy_port}" }
+    let(:proxy_host) { "proxy.mycorp.com" }
+    let(:proxy_port) { 8080 }
+
+    before do
+      stub_const("ENV", env)
+    end
+
+    shared_examples_for "a proxy uri" do
+      it "contains the host" do
+        expect(proxy_uri.host).to eq(proxy_host)
+      end
+
+      it "contains the port" do
+        expect(proxy_uri.port).to eq(proxy_port)
+      end
+    end
+
+    context "when the config setting is normalized (does not contain the scheme)" do
+      include_examples "a proxy uri" do
+
+        let(:proxy_prefix) { "" }
+
+        let(:env) do
+          {
+            "#{scheme}_proxy" => proxy,
+            "no_proxy" => nil,
+          }
+        end
+      end
+    end
+
+    context "when the proxy is set by the environment" do
+      include_examples "a proxy uri" do
+        let(:env) do
+          {
+            "https_proxy" => "https://proxy.mycorp.com:8080",
+            "https_proxy_user" => "jane_username",
+            "https_proxy_pass" => "opensesame"
+          }
+        end
+
+        let(:proxy_uri) { URI.parse(env["https_proxy"]) }
+      end
+    end
+
+    context "when an empty proxy is set by the environment" do
+      let(:env) do
+        {
+          "https_proxy" => ""
+        }
+      end
+
+      it "does not fail with URI parse exception" do
+        expect { proxy_uri }.to_not raise_error
+      end
+    end
+  end
+
   describe "allowing chefdk configuration outside of chefdk" do
 
     it "allows arbitrary settings in the chefdk config context" do
